@@ -1,6 +1,18 @@
 # 嵌入式应用开发
 嵌入式应用开发,读书笔记.
 
+<!-- TOC -->
+
+- [嵌入式应用开发](#嵌入式应用开发)
+    - [linux下文件及命令](#linux下文件及命令)
+    - [gcc的使用](#gcc的使用)
+        - [putty的使用](#putty的使用)
+        - [gcc工具](#gcc工具)
+    - [make工程管理器](#make工程管理器)
+    - [makefile文件的编写规则](#makefile文件的编写规则)
+
+<!-- /TOC -->
+
 ## linux下文件及命令
 
 >linux下一切皆文件
@@ -67,13 +79,55 @@ gcc a.c -o a 编译a.c文件
 ## make工程管理器
 ## makefile文件的编写规则
 
-makefile文件格式:   
->target:依赖文件   
-< tap >command
+makefile文件格式:
+```txt   
+target:依赖文件   
+    command
+```
  
- 例子:   
- hello:hello.c  
- < tap >gcc -c hello.c -o hello
+ 例子:
+ ```txt   
+hello:hello.c  
+    gcc -c hello.c -o hello   
+```
+
+变量定义方式:
+* 递归展开方式VAR=var  （将递归展开变量的引用) 
+* 简单方式 VAR：=var
+```txt
+OBJS = kang.o yul.o
+CC = gcc
+CFLAGS = -Wall -O -g
+david : $(OBJS)
+       $(CC) $(OBJS) -o david
+kang.o : kang.c kang.h
+       $(CC) $(CFLAGS) -c kang.c -o kang.o
+yul.o : yul.c yul.h
+       $(CC) $(CFLAGS) -c yul.c -o yul.o
+```
+
+makefile中的自动变量
+![自动变量](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/%E8%87%AA%E5%8A%A8%E5%8F%98%E9%87%8F.png)
+>make在启动时会自动读取系统当前已经定义了的环境变量，并且会创建与之具有相同名称和数值的变量
+
+makefile规则
+>makefile的规则是make进行处理的依据，它包括了目标体、依赖文件及其之间的命令语句。
+* 普通规则
+* 隐含规则
+* 模式规则
+
+ make的clean垃圾文件清理
+ ```txt
+ .PHONY : clean//保证clean目标每次都能被重新生成
+ clean :
+ 	rm  *.o
+ ```
+## 文件的IO编程
+等待,未更新...
+
+ 
+
+
     
 
 
