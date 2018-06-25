@@ -13,6 +13,13 @@
         - [串口编程](#串口编程)
     - [进程控制](#进程控制)
         - [linux中进程函数](#linux中进程函数)
+    - [进程通信](#进程通信)
+        - [管道](#管道)
+        - [信号量](#信号量)
+        - [共享内存](#共享内存)
+        - [消息队列](#消息队列)
+
+  
     
 ## linux下文件及命令
 
@@ -177,23 +184,27 @@ getpid()和getppid(),是linux提供的获取进程号的函数.
   * 堆(存放动态分配的数据)
 * 代码段存放的是程序代码的数据
 * 堆栈段存放的是子程序的返回地址,子程序的参数以及程序的局部变量
-|![进程的地址空间](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4.png)|
-|:-------------:|
+![进程的地址空间](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4.png)
+
 
 ### linux中进程函数
 >fork()函数,内核提供的创建一个新进程的函数.使用fork()函数得到的子进程是父进程的一个复制品。而子进程所独有的只有它的进程号、资源使用和计时器等。
 
 fork()函数会返回两个值,在子进程中会返回0,在父进程中会返回子进程的id.
-|![fork](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/fork.png)|
-|:-------:|
+![fork](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/fork.png)
+
 具体用法见[forktest](https://github.com/sastar/Linux-application-development/blob/master/%E7%AC%AC7%E5%91%A8%20%E8%BF%9B%E7%A8%8B%E6%8E%A7%E5%88%B6/lesson7-2/forktest.c)    
 
 EXEC函数族
-|![exec函数族](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/exec.png)|
-|:-------:|
+![exec函数族](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/exec.png)
+
 各个位段的含义
-|![](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/execbit.png)|
-|:-------:|
+![](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/execbit.png)        
+
+主要记住execl及execv。
+* execl要将命令的路径全名写上，然后写上命令，传入的参数等等。以NULL结尾。
+* execv将命令的路径写上，然后构造一个数组，将命令，和传入的参数写上。
+
 具体用法见[exectest](https://github.com/sastar/Linux-application-development/blob/master/%E7%AC%AC7%E5%91%A8%20%E8%BF%9B%E7%A8%8B%E6%8E%A7%E5%88%B6/lesson7-3/exectest.c)     
 
 exit()和_exit()函数比较
@@ -205,13 +216,74 @@ wait()和waitpid()函数
 >waitpid函数可使进程阻塞，知道指定的子进程结束，或者等到任意子进程退出
 
 wait()和waitpid()函数规范
-|![wait](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/wait.png)|
-|:-------:|
+![wait](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/wait.png)
 
-|![waitpid](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/waitpid.png)|
-|:-------:|
+
+![waitpid](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/waitpid.png)
 
 具体用法见[waitpid](https://github.com/sastar/Linux-application-development/blob/master/%E7%AC%AC7%E5%91%A8%20%E8%BF%9B%E7%A8%8B%E6%8E%A7%E5%88%B6/lesson7-4/waitpid.c)
+
+## 进程通信
+>进程间的通信主要有四种方式，管道，信号量，共享内存，消息队列
+
+> * unix 进程间的通信包括管道，FIFO，和信号。
+>* System V进程间通信包括消息队列，共享内存，信号量。
+>* Posix 进程间通信（IPC）包括Posix消息队列、Posix信号量以及Posix共享内存区。
+
+### 管道
+>管道分为三种，无名管道(pipe),有名管道(mkfifo),标准流管道(popen);    
+无名管道用于同源关系的进程中，在创建管道后，会出来一个，要将一个管道的读或者写管道关闭，fd[0]是读管道，fd[1]是写管道    
+有名管道可用于任意进程，非同源的进程也可以通信。用mkfifo打开一个文件后，将这个文件作为一个普通文件来读和写。
+标准流管道是将无名管道的各个步骤封装的函数，通过标准流管道，将执行的程序的输出到一个文件指针中。
+
+无名管道：
+![](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/pipe.png)      
+
+有名管道：
+![](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/mkfifo.png)     
+
+标准流：
+![](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/popen.png)     
+
+### 信号量
+
+#### 信号
+>信号是UNIX中所使用的进程通信的一种最古老的方法。它是在软件层次上对中断机制的一种模拟，**是一种异步通信方式**。信号可以直接进行用户空间进程和内核进程之间的交互，内核进程也可以利用它来通知用户空间进程发生了哪些系统事件。
+
+系统中对信号的处理有四种处理方式：忽略信号，系统默认处理，延迟操作，捕捉信号。其中有两种信号是不能被忽略的，SIGKILL,SIGSTOP，终止信号和暂停信号。    
+kill用于发送信号给进程，signal函数用于接受其他进程发送的信号，将接受的信号定义一个处理函数，raise允许进程向自己发送信号。
+
+#### 信号量
+>信号灯(semaphore)，也叫信号量。它是不同进程间或一个给定进程内部不同线程间同步的机制。
+
+System V的信号灯（进程同步）是一个或者多个信号灯的一个集合。其中的每一个都是单独的计数信号灯。而Posix信号灯（线程同步）指的是单个计数信号灯
+
+System V 信号灯由内核维护
+
+主要函数semget，semop，semctl
+
+### 共享内存
+>* 共享内存是一种最为高效的进程间通信方式，进程可以直接读写内存，而不需要任何数据的拷贝
+>* 为了在多个进程间交换信息，内核专门留出了一块内存区，可以由需要访问的进程将其映射到自己的私有地址空间。
+>* 进程就可以直接读写这一内存区而不需要进行数据的拷贝，从而大大提高的效率。
+>* 由于多个进程共享一段内存，因此也需要依靠某种同步机制，如互斥锁和信号量等
+
+共享内存的使用步骤：    
+创建或打开一片共享内存(shmget)→映射共享内存(shmat)→取消映射(shmdt)→删除共享内存(shmctl)。
+
+在共享内存中，用共享内存结构体实现进程同步，用一个标志位来表示是否已读或已写。
+
+
+### 消息队列
+>* 消息队列是IPC对象的一种
+>* 消息队列由消息队列ID来唯一标识
+>* 消息队列就是一个消息的列表。用户可以在消息队列中添加消息、读取消息等。
+>* 消息队列可以按照类型来发送/接收消息
+
+* msgget()创建一个消息队列，创建的消息队列受到系统的限制
+* 添加消息使用的函数是msgsnd，按照类型把消息添加到已打开的消息队列末尾
+* 读取消息使用的函数是msgrcv，可以按照类型把消息从消息队列中取走
+* 控制消息队列使用的函数是msgctl，它可以完成多项功能。
 
 
 
