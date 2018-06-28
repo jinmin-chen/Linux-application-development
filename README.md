@@ -21,6 +21,14 @@
     - [多线程](#多线程)
         - [线程的创建](#线程的创建)
         - [线程的同步与互斥](#线程的同步与互斥)
+    - [linux网络编程](#linux网络编程)
+        - [网络编程基础知识](#网络编程基础知识)
+            - [数据存储顺序的转换](#数据存储顺序的转换)
+            - [地址格式的转换](#地址格式的转换)
+            - [名字地址格式的转化](#名字地址格式的转化)
+        - [TCP编程](#TCP编程)
+        - [UDP编程](#UDP编程)
+
 
   
     
@@ -326,12 +334,55 @@ V+ P-
 3. sem_post(sem_t *sem)//加入信号，使信号量加一。
 4. sem_destroy(sem_t *sem)//销毁信号量。
 
+## linux网络编程
+TCP传输需要连接才能传输，三次握手后保证数据的通路顺畅，还有各种机制来保证数据到达。所以会有很大的一个延迟。    
+而UDP不用，UDP是直接传输，多条道路送达目的主机。所以实时性较好。
 
+### 网络编程基础知识
+socket是一个半相关描述符{协议，本地地址，本地端口}；   
+socket的类型有三种：
+* 流式套接字(SOCKET_STRING)
+* 数据包套接字(SOCKET_DGRAM)
+* 原始套接字
 
+socket的信息数据结构
+![struct sockaddr](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/strcut%20sockaddr.png)
 
+#### 数据存储顺序的转换
+计算机存储有两种模式：高位字节序优先模式(大端模式)，低位字节序优先模式(小端模式)；     
+在Internet上，优先以大端模式传输，在计算机中，大部分优先以小端模式存储。因此，需要对两种模式进行转换,
+linux下提供了转换的函数：htons()16位主机转网络，htonl32位主机装网络，ntohs()类似，ntohl();
 
+#### 地址格式的转换
+用户在表达ip地址的时候是用点分十进制来表示，而在socket中使用的是二进制数值，所以需要将点分十进制转化为二进制，linux下提供了多种转换的函数：通常使用的是这两种：
+inet_pton(int family,const char*strptr,void *addrptr);点分十进制转化为二进制。    
+inet_ntop(int family,const void *src,char *dst,sockeln_t cnt)
+将二进制转化为点分十进制。
 
+#### 名字地址格式的转化
+struct hostent *gethostbyname(const char *hostname)//将主机名转化为ip地址,返回hostent结构体；   
+hostent结构体：    
+![hostent](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/hostent.png)
 
+### TCP编程
+与socket编程相关的函数是 socket()创建一个socket，返回sockid值，bing()绑定服务器的ip和端口号，并将它们公开，listen()监听scoket端口，看是否有客户端连入，accept()函数等待客户端连入，并返回一个socket 描述符，作为独有的数据socket，send()和recv()函数是TCP编程中的发送和接收数据的函数。connect()函数是客户端主动连接服务器的函数。
+TCP编程流程图：
+![TCP](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/TCP.png)
+* int socket(int family,int type,int protocol);      
+* int bing(int sockfd,struct sockaddr *my_addr,int addrlen);     
+* int listen(int sockfd,int backlog);
+* int accept(int sockfd,struct sockaddr *addr,socklen_t * addrlen);//地址长度传入的是指针。
+* int connect(int sockfd,struct sockaddr *serv_addr,int len);
+* int send(int sockfd,const void *msg,int len,int flags);
+* int recv(int sockfd,void *buf,int len,unsigned int flags);
+
+### UDP编程
+UDP网络编程流程图：
+![UDP](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/UDP.png)
+
+编程的主要相关函数是：sendto()和recvfrom();
+* int sendto(int sockfd,const void *buf,int buflen,int flag,const struct sockaddr *to,int tolen)；比send函数多了几个地址结构和长度参数。
+* int recvfrom(int sockfd,void *buf,int buflen,int flags,struct sockaddr *from,int sockaddr_len)
 
     
 
