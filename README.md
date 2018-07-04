@@ -28,6 +28,9 @@
             - [名字地址格式的转化](#名字地址格式的转化)
         - [TCP编程](#TCP编程)
         - [UDP编程](#UDP编程)
+    - [番外](#番外)
+        - [文件操作](#文件操作)
+        - [POSIX信号量](#POSIX信号量)
 
 
   
@@ -77,20 +80,53 @@ linux 下根目录文件意义:
 * mv:移动文件,可以重命名
 * cp:复制文件
 * kill:发送信号给程序
-* chmod:改变文件权限chmod 777 filename;
+* chmod:改变文件权限，如 “chmod 777 filename”;
 * find: 查找文件,find ./linuxc -name lessen*
+* shutdown 命令，关闭linux。可加参数，-h -s等
+* grep 查找字符串，通常和|管道线配合使用。
+* free 查看当前内存
+* cat 显示文件的内容
+* ln 为文件在另一个位置建立链接，相当于Windows下的快捷方式。ln -s ./src_filename ../dest_filename
+* gzip 压缩或解压文件。
 >以上为一些常用的命令,其他可查阅man手册获得;
 
 ## gcc的使用
 ### putty的使用
->Putty是一款远程登录工具，用它可以非常方便的登录到Linux服务器上进行各种操作（命令行方式）。Putty完全免费，而且无需安装(双击即可运行)，支持多种连接类型(Telnet、SSH、Rlogin ...).
+> Putty是一款远程登录工具，用它可以非常方便的登录到Linux服务器上进行各种操作（命令行方式）。Putty完全免费，而且无需安装(双击即可运行)，支持多种连接类型(Telnet、SSH、Rlogin ...).
 
-使用自己查阅资料
+使用百度，谷歌等工具查阅资料使用
 ### gcc工具
 >GNU CC（简称为gcc）是GNU项目中符合ANSI C标准的编译系统，可以编译如C、C++、Object C、Java、Fortran、Pascal、Modula-3和Ada等多种语言，而且gcc又是一个交叉平台编译器，它能够在当前CPU平台上为多种不同体系结构的硬件平台开发软件，因此尤其适合在嵌入式领域的开发编译。
 
+1. gcc预处理阶段
+* 使用 -E 选项将源文件生成预处理文件  gcc -E hello.c -o hello.i
+2. gcc 编译阶段
+* 使用 -S 选项将预处理文件编译成汇编代码 gcc -S hello.i -o hello.s
+3. 汇编阶段
+* 使用 -c 选项将汇编文件汇编成目标文件 gcc -c hello.s -o hello.o
+4. 链接阶段，生成可执行文件
+* 使用 -l 链接文件，如果没有指定，系统则到默认目录下进行查看链接。
+如gcc hello.o -o hello
+![gccchose](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/gccchose.png)
+
+gcc的库选项：     
+![gcclib](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/gcclib.png)       
+
+生成静态库：    
+```sh
+gcc  -c  unsgn_pow.c -o unsgn_pow.o
+ar  rcsv  libpow.a  unsgn_pow.o、打包文件生成静态库
+	a - unsgn_pow.o//屏幕输出，非命令
+gcc -o pow_test pow_test.c -L. –lpow//链接静态库
+./pow_test   2   10
+	2 ^ 10 = 1024 
+```
+
+动态库配置较麻烦，自己动手，丰衣足食。
+
 gcc编译过程:   
 源代码→预处理器→编译器→汇编处理→生成目标代码*.o→链接库函数→生成可执行文件
+![gcc](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/gcc.png)
 >预处理→编译→汇编→链接→执行
 
 gcc a.c -o a 编译a.c文件
@@ -148,11 +184,13 @@ makefile规则
 * 用户与内核之间不是直接进行交互的,要通过系统调用,也就是API使用内核提供的服务.利用内核提供的API,可以是实现进程创建,线程创建,管道创建等等.
 
 内核通过文件描述符来引用文件,在linux中,所有对设备和文件的操作都是使用文件描述符来进行的.
->文件描述符是一个非负的整数，它是一个索引值，并指向在内核中每个进程打开文件的记录表.
+>文件描述符是一个非负的整数，它是一个索引值，并指向在内核中每个进程打开文件的记录表.     
+通常，一个进程打开的时候，都会打开三个文件，STDIN_FILENO,STDOUT_FILENO,STRERR_FILENO.标准输入，标准输出，标准出错处理。
+
 
 ### 文件IO函数
 1. open()函数是用于打开或创建文件，在打开或创建文件时可以指定文件的属性及用户的权限等各种参数。
-![open](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/open.png)
+![open](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/open.png)      
 ```c
 int fd_src;
 fd_src=open("./src.txt",O_RDINLY);//以只读方式打开文件
@@ -160,23 +198,23 @@ int fd_dest;
 fd_dest=open("./dest.txt",O_WRONLY|O_CREAT,0600);//创建一个文件,设置权限为创建者可读可写,并以只写方式打开文件.
 ```
 2. close()函数是用于关闭一个被打开的文件。当一个进程终止时，所有被它打开的文件都由内核自动关闭，很多程序都使用这一功能而不显示地关闭一个文件
-![close](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/close.png)
+![close](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/close.png)     
 ```c
 close(fp);
 ```
 3. read()函数是用于将从指定的文件描述符中读出的数据放到缓存区中，并返回实际读入的字节数。若返回0，则表示没有数据可读，即已达到文件尾。读操作从文件的当前指针位置开始。当从终端设备文件中读出数据时，通常一次最多读一行。
-![read](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/read.png)
+![read](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/read.png)       
 ```c
 readbytes=read(fd_src,buf,sizeof(buf));
 ```
 4. write()函数是用于向打开的文件写数据，写操作从文件的当前指针位置开始。对磁盘文件进行写操作，若磁盘已满或超出该文件的长度，则write()函数返回失败。
-![write](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/write.png)
+![write](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/write.png)       
 ```c
 writebytes=write(fd_dest,buf,strlen(buf));
 ```
 
 5. lseek()函数是用于在指定的文件描述符中将文件指针定位到相应的位置。它只能用在可定位（可随机访问）文件操作中。管道、套接字和大部分字符设备文件是不可定位的，所以在这些文件的操作中无法使用lseek()调用。 
-![lseek](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/lseek.png)
+![lseek](https://raw.githubusercontent.com/sastar/Linux-application-development/master/image/lseek.png)       
 ```c
 lseek(fd_src,-5,SEEK_END);//将指针移动到fd_src指向的文件的最后5个字符
 ```
@@ -385,7 +423,99 @@ UDP网络编程流程图：
 * int recvfrom(int sockfd,void *buf,int buflen,int flags,struct sockaddr *from,int sockaddr_len)
 
     
+## 番外
+### 文件操作
+>将src文件的最后5个字符打印出来并将其读入另外创建的文件中
+
+程序逻辑：以只读的方式打开文件(open)，创建一个新的文件→移动文件指针(lseek)→读取最后5个数据(read)到数组中，并输出→将buf数组中的数据读取的到dest文件中，→关闭描述符
+
+1. ```c
+    src_fd=open("./src.txt",O_RDONLY);//以只读方式打开文件
+    dest_fd=open("./dest.txt",O_WRONLY|O_CREAT|O_TRUNC,0600);//以只写方式创建文件，如果已存在，则置零
+    ```
+2. ```c
+    lseek(src_fd,-5,SEEK_END);//将文件指针移动到倒数第5个位置
+    ```
+3. ```C
+    num=read(src_fd,buf,sizeof(buf));//将文件数据读取到buf数组中
+    printf("%s\n",buf);
+    ```
+4. ```c
+    num=write(dest_fd,buf,strlen(buf));//将数组中的数据读取到文件中
+    ```
+5. ```c
+    close(src_fd);
+    close(dest_fd);
+    ```
+
+[文件io源代码](https://github.com/sastar/Linux-application-development/blob/master/code/ioopt.c)    
 
 
+>tips 助记
+1. 首先打开一个盒子,这个盒子只能拿东西，里面放满了方块。
+2. 然后在制作另外一个盒子，如果有了另外一个盒子，就清空里面的东西，这个盒子只能放东西
+3. 将手指移动到第一个盒子的最后5个方块的前面，将最后五个方块取出。
+4. 将五个方块放到另外一个盒子中。
+5. 将两个盒子合上盖子。
 
+### POSIX信号量
+>主线程负责从键盘获取两个整数，子线程1负责对这两个整数完成求和运算并把结果打印出来，子线程2负责对这两个整数完成乘法运算并打印出来。
+程序逻辑：   
+创建两个线程(pthread_create())→初始化POSIX信号量(sem_init())→在主线程中的while循环中，首先等待信号到来(sem_wait()),然后输入两个整数值。最后将线程1的信号量值加1→在线程1中等待信号到来，若信号到来，执行加操作，并将线程2的信号量值1→在线程2中等待信号到来，若信号到来，执行乘法操作，并将主线程的信号量值1→依次循环。。。。。→最后销毁信号量(sem_destroy());
 
+1. ```c
+    ret=pthread_create(&thread[i],NULL,thread_func,(void *)i);
+    ```
+2. ```c
+    for(i=0;i<3;i++)
+    {
+        sem_init(&sem[i],0,0);
+    }
+    ```
+3. ```C
+    sem_post(&sem[0]);
+    while(1)
+    {
+        sem_wait(&sem[0]);
+        printf("请输入两个整数：");
+        scanf("%d %d",&x,&y);
+        sem_post(&sem[1]);
+    }
+    ```
+4. ```c
+    void *thread_func(void *arg)
+    {
+        int thread_num=(int)arg;
+
+        if(thread_num==0)
+        {
+            while(1)
+            {
+                sem_wait(&sem[1]);
+                printf("x+y=%d\n",x+y);
+                sem_post(&sem[2]);
+            }
+            
+        }
+        if(thread_num==1)
+        {
+            while(1)
+            {
+                sem_wait(&sem[2]);
+                printf("x*y=%d\n",x*y);
+                sem_post(&sem[0]);
+            }
+            
+        }
+    }
+    ```
+5. ```c
+    for(i=0;i<3;i++)
+    {
+        sem_destroy(&sem[i]);
+    }
+    ```
+
+[thread_posix源代码](https://github.com/sastar/Linux-application-development/blob/master/code/thread_posix.c)
+
+>tips 助记。。还没想好。
